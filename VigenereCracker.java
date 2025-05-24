@@ -64,8 +64,7 @@ public class VigenereCracker {
         }
         return new KeyResult(bestKey, bestScore);
     }
-    private static String findKeyByFrequency(String text, int keyLen,
-                                             String alphabet, double[] langFreq) {
+    private static String findKeyByFrequency(String text, int keyLen, String alphabet, double[] langFreq) {
         int N = alphabet.length();
         StringBuilder key = new StringBuilder();
         for (int i = 0; i < keyLen; i++) {
@@ -79,7 +78,6 @@ public class VigenereCracker {
                     total++;
                 }
             }
-
             double bestCorr = -1;
             int bestShift = 0;
             for (int shift = 0; shift < N; shift++) {
@@ -93,7 +91,6 @@ public class VigenereCracker {
                 }
             }
             key.append(alphabet.charAt(bestShift));
-
             System.out.println("Segment " + (i + 1) + " (shift=" + bestShift +
                     ", key letter='" + alphabet.charAt(bestShift) + "'):");
             List<Map.Entry<Character, Double>> freqList = new ArrayList<>();
@@ -111,7 +108,34 @@ public class VigenereCracker {
         }
         return key.toString();
     }
-    private static double scoreDecryption(String text, String key, String alphabet, double[] langFreq){
-        return 0;
+    private static double scoreDecryption(String text, String key, String alphabet, double[] langFreq) {
+        int N = alphabet.length();
+        int keyLen = key.length();
+        double totalChi = 0;
+        for (int i = 0; i < keyLen; i++) {
+            int[] count = new int[N];
+            int total = 0;
+            for (int pos = i; pos < text.length(); pos += keyLen) {
+                char c = text.charAt(pos);
+                int idx = alphabet.indexOf(c);
+                if (idx != -1) {
+                    count[idx]++;
+                    total++;
+                }
+            }
+            if (total == 0) continue;
+            int kidx = alphabet.indexOf(key.charAt(i));
+            double chi = 0;
+            for (int j = 0; j < N; j++) {
+                int shiftedIdx = (j + kidx) % N;
+                double observed = count[shiftedIdx];
+                double expected = total * langFreq[j];
+                if (expected != 0) {
+                    chi += Math.pow(observed - expected, 2) / expected;
+                }
+            }
+            totalChi += chi;
+        }
+        return totalChi / keyLen;
     }
 }
