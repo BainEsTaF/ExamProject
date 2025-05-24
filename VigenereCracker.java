@@ -21,6 +21,7 @@ public class VigenereCracker {
         Scanner scanner = new Scanner(System.in, "UTF-8");
         System.out.println("Input encrypted text:");
         String text = scanner.nextLine();
+        // SELECT LANGUAGE
         System.out.println("Select cipher language (1 – English, 2 – Russian):");
         int choice = scanner.nextInt();
         scanner.nextLine();
@@ -48,6 +49,7 @@ public class VigenereCracker {
             this.score = score;
         }
     }
+    // AUTO FIND KEY LENGTH
     private static KeyResult autoDetectKeyLength(String text, String alphabet, double[] langFreq, int maxKeyLen) {
         double bestScore = Double.MAX_VALUE;
         String bestKey = "";
