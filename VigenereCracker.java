@@ -50,7 +50,7 @@ public class VigenereCracker {
             this.score = score;
         }
     }
-
+    
     private static KeyResult autoDetectKeyLength(String text, String alphabet, double[] langFreq, int maxKeyLen) {
         double bestScore = Double.MAX_VALUE;
         String bestKey = "";
@@ -64,8 +64,52 @@ public class VigenereCracker {
         }
         return new KeyResult(bestKey, bestScore);
     }
-    private static String findKeyByFrequency(String text, int keyLen, String alphabet, double[] langFreq){
-        return null;
+    private static String findKeyByFrequency(String text, int keyLen,
+                                             String alphabet, double[] langFreq) {
+        int N = alphabet.length();
+        StringBuilder key = new StringBuilder();
+        for (int i = 0; i < keyLen; i++) {
+            int[] count = new int[N];
+            int total = 0;
+            for (int pos = i; pos < text.length(); pos += keyLen) {
+                char c = text.charAt(pos);
+                int idx = alphabet.indexOf(c);
+                if (idx != -1) {
+                    count[idx]++;
+                    total++;
+                }
+            }
+
+            double bestCorr = -1;
+            int bestShift = 0;
+            for (int shift = 0; shift < N; shift++) {
+                double corr = 0;
+                for (int j = 0; j < N; j++) {
+                    corr += langFreq[j] * (count[(j + shift) % N] / (double) total);
+                }
+                if (corr > bestCorr) {
+                    bestCorr = corr;
+                    bestShift = shift;
+                }
+            }
+            key.append(alphabet.charAt(bestShift));
+
+            System.out.println("Segment " + (i + 1) + " (shift=" + bestShift +
+                    ", key letter='" + alphabet.charAt(bestShift) + "'):");
+            List<Map.Entry<Character, Double>> freqList = new ArrayList<>();
+            for (int j = 0; j < N; j++) {
+                if (count[j] > 0) {
+                    freqList.add(new AbstractMap.SimpleEntry<>(alphabet.charAt(j), count[j] * 100.0 / total));
+                }
+            }
+            freqList.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+            System.out.println("  Top 3 letters:");
+            for (int j = 0; j < Math.min(3, freqList.size()); j++) {
+                Map.Entry<Character, Double> entry = freqList.get(j);
+                System.out.printf("    %c: %.2f%%\n", entry.getKey(), entry.getValue());
+            }
+        }
+        return key.toString();
     }
     private static double scoreDecryption(String text, String key, String alphabet, double[] langFreq){
         return 0;
