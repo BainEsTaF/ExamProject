@@ -21,12 +21,19 @@ public class VigenereCracker {
         Scanner scanner = new Scanner(System.in, "UTF-8");
         System.out.println("Input encrypted text:");
         String text = scanner.nextLine();
-        // SELECT LANGUAGE
         System.out.println("Select cipher language (1 – English, 2 – Russian):");
         int choice = scanner.nextInt();
         scanner.nextLine();
-        String alphabet = (choice == 1) ? ENG_ALPHABET : RUS_ALPHABET;
-        double[] freq = (choice == 1) ? ENG_FREQ : RUS_FREQ;
+
+        String alphabet;
+        double[] freq;
+        if (choice == 1) {
+            alphabet = ENG_ALPHABET;
+            freq = ENG_FREQ;
+        } else {
+            alphabet = RUS_ALPHABET;
+            freq = RUS_FREQ;
+        }
         // FILTERING FOR ALPHABET
         StringBuilder filteredBuilder = new StringBuilder();
         for (char c : text.toUpperCase().toCharArray()) {
@@ -35,21 +42,31 @@ public class VigenereCracker {
             }
         }
         String filtered = filteredBuilder.toString();
+
         if (filtered.length() < 10) {
             System.out.println("Text too short for analysis.");
             return;
         }
+        int maxKeyLen = 20;
+        // AUTO FIND LENGTH KEY AND KEY
+        KeyResult result = autoDetectKeyLength(filtered, alphabet, freq, maxKeyLen);
+        System.out.println("Auto detected key length: " + result.key.length());
+        System.out.println("Detected key: " + result.key);
+        String decrypted = decryptVigenere(text, result.key, alphabet);
+        System.out.println("Decrypted text:");
+        System.out.println(decrypted);
     }
     // SAVE RESULT
     static class KeyResult {
         String key;
         double score;
+
         KeyResult(String key, double score) {
             this.key = key;
             this.score = score;
         }
     }
-    // AUTO FIND KEY LENGTH
+    // AUTO FIND LENGTH FOR CHI-SQUARE
     private static KeyResult autoDetectKeyLength(String text, String alphabet, double[] langFreq, int maxKeyLen) {
         double bestScore = Double.MAX_VALUE;
         String bestKey = "";
@@ -62,6 +79,39 @@ public class VigenereCracker {
             }
         }
         return new KeyResult(bestKey, bestScore);
+    }
+    // CHI-SQUARE FOR CALCULATE THE AVERAGE SCORE
+    private static double scoreDecryption(String text, String key, String alphabet, double[] langFreq) {
+        int N = alphabet.length();
+        int keyLen = key.length();
+        double totalChi = 0;
+
+        for (int i = 0; i < keyLen; i++) {
+            int[] count = new int[N];
+            int total = 0;
+            for (int pos = i; pos < text.length(); pos += keyLen) {
+                char c = text.charAt(pos);
+                int idx = alphabet.indexOf(c);
+                if (idx != -1) {
+                    count[idx]++;
+                    total++;
+                }
+            }
+            if (total == 0) continue;
+
+            int kidx = alphabet.indexOf(key.charAt(i));
+            double chi = 0;
+            for (int j = 0; j < N; j++) {
+                int shiftedIdx = (j + kidx) % N;
+                double observed = count[shiftedIdx];
+                double expected = total * langFreq[j];
+                if (expected != 0) {
+                    chi += Math.pow(observed - expected, 2) / expected;
+                }
+            }
+            totalChi += chi;
+        }
+        return totalChi / keyLen;
     }
     // FREQ ANALYSIS and FIND KEY
     private static String findKeyByFrequency(String text, int keyLen, String alphabet, double[] langFreq) {
@@ -91,13 +141,16 @@ public class VigenereCracker {
                 }
             }
             key.append(alphabet.charAt(bestShift));
+
             // OUTPUT FREQ ANALYSIS
             System.out.println("Segment " + (i + 1) + " (shift=" + bestShift +
                     ", key letter='" + alphabet.charAt(bestShift) + "'):");
             List<Map.Entry<Character, Double>> freqList = new ArrayList<>();
             for (int j = 0; j < N; j++) {
                 if (count[j] > 0) {
-                    freqList.add(new AbstractMap.SimpleEntry<>(alphabet.charAt(j), count[j] * 100.0 / total));
+                    char letter = alphabet.charAt(j);
+                    double perc = count[j] * 100.0 / total;
+                    freqList.add(new AbstractMap.SimpleEntry<>(letter, perc));
                 }
             }
             // SORT IN DESCENDING ORDER
@@ -111,35 +164,29 @@ public class VigenereCracker {
         }
         return key.toString();
     }
-    // CHI-SQUARE FOR CALCULATE THE AVERAGE SCORE
-    private static double scoreDecryption(String text, String key, String alphabet, double[] langFreq) {
+    // DECRYPT VIGENERE WITH KEY
+    private static String decryptVigenere(String cipher, String key, String alphabet) {
+        StringBuilder result = new StringBuilder();
         int N = alphabet.length();
         int keyLen = key.length();
-        double totalChi = 0;
-        for (int i = 0; i < keyLen; i++) {
-            int[] count = new int[N];
-            int total = 0;
-            for (int pos = i; pos < text.length(); pos += keyLen) {
-                char c = text.charAt(pos);
-                int idx = alphabet.indexOf(c);
-                if (idx != -1) {
-                    count[idx]++;
-                    total++;
+        int ki = 0;
+        for (char c : cipher.toCharArray()) {
+            int idx = alphabet.indexOf(Character.toUpperCase(c));
+            if (idx != -1) {
+                char kchar = key.charAt(ki % keyLen);
+                int kidx = alphabet.indexOf(kchar);
+                int pidx = (idx - kidx + N) % N;
+                char pchar = alphabet.charAt(pidx);
+                if (Character.isLowerCase(c)) {
+                    result.append(Character.toLowerCase(pchar));
+                } else {
+                    result.append(pchar);
                 }
+                ki++;
+            } else {
+                result.append(c);
             }
-            if (total == 0) continue;
-            int kidx = alphabet.indexOf(key.charAt(i));
-            double chi = 0;
-            for (int j = 0; j < N; j++) {
-                int shiftedIdx = (j + kidx) % N;
-                double observed = count[shiftedIdx];
-                double expected = total * langFreq[j];
-                if (expected != 0) {
-                    chi += Math.pow(observed - expected, 2) / expected;
-                }
-            }
-            totalChi += chi;
         }
-        return totalChi / keyLen;
+        return result.toString();
     }
 }
