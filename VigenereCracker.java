@@ -60,6 +60,7 @@ public class VigenereCracker {
     public static class KeyResult {
         String key;
         double score;
+
         KeyResult(String key, double score) {
             this.key = key;
             this.score = score;
@@ -96,6 +97,7 @@ public class VigenereCracker {
         int N = alphabet.length();
         int keyLen = key.length();
         double totalChi = 0;
+
         for (int i = 0; i < keyLen; i++) {
             int[] count = new int[N];
             int total = 0;
@@ -151,6 +153,7 @@ public class VigenereCracker {
                 }
             }
             key.append(alphabet.charAt(bestShift));
+
             // OUTPUT FREQ ANALYSIS
             System.out.println("Segment " + (i + 1) + " (shift=" + bestShift +
                     ", key letter='" + alphabet.charAt(bestShift) + "'):");
@@ -173,6 +176,32 @@ public class VigenereCracker {
         }
         return key.toString();
     }
+    // DECRYPT VIGENERE WITH KEY
+    public static String decryptVigenere(String cipher, String key, String alphabet) {
+        StringBuilder result = new StringBuilder();
+        int N = alphabet.length();
+        int keyLen = key.length();
+        int ki = 0;
+        for (char c : cipher.toCharArray()) {
+            int idx = alphabet.indexOf(Character.toUpperCase(c));
+            if (idx != -1) {
+                char kchar = key.charAt(ki % keyLen);
+                int kidx = alphabet.indexOf(kchar);
+                int pidx = (idx - kidx + N) % N;
+                char pchar = alphabet.charAt(pidx);
+                if (Character.isLowerCase(c)) {
+                    result.append(Character.toLowerCase(pchar));
+                } else {
+                    result.append(pchar);
+                }
+                ki++;
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
+    }
+
     public static String supportLetters(String text, String key, boolean decrypt) {
         StringBuilder result = new StringBuilder();
         key = key.toLowerCase();
