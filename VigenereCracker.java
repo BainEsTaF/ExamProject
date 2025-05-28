@@ -57,7 +57,7 @@ public class VigenereCracker {
         System.out.println(decrypted);
     }
     // SAVE RESULT
-    static class KeyResult {
+    public static class KeyResult {
         String key;
         double score;
 
@@ -68,11 +68,23 @@ public class VigenereCracker {
     }
     // AUTO FIND LENGTH FOR CHI-SQUARE
     public static KeyResult autoDetectKeyLength(String text, String alphabet, double[] langFreq, int maxKeyLen) {
+        // FILTERING TEXT
+        StringBuilder filteredBuilder = new StringBuilder();
+        for (char c : text.toUpperCase().toCharArray()) {
+            if (alphabet.indexOf(c) != -1) {
+                filteredBuilder.append(c);
+            }
+        }
+        String filtered = filteredBuilder.toString();
+        // ERROR FOR SHORT TEXT
+        if (filtered.length() < 10) {
+            throw new IllegalArgumentException("Text is too short or does not contain valid characters from the alphabet.");
+        }
         double bestScore = Double.MAX_VALUE;
         String bestKey = "";
         for (int keyLen = 1; keyLen <= maxKeyLen; keyLen++) {
-            String key = findKeyByFrequency(text, keyLen, alphabet, langFreq);
-            double score = scoreDecryption(text, key, alphabet, langFreq);
+            String key = findKeyByFrequency(filtered, keyLen, alphabet, langFreq);
+            double score = scoreDecryption(filtered, key, alphabet, langFreq);
             if (score < bestScore) {
                 bestScore = score;
                 bestKey = key;
@@ -81,7 +93,7 @@ public class VigenereCracker {
         return new KeyResult(bestKey, bestScore);
     }
     // CHI-SQUARE FOR CALCULATE THE AVERAGE SCORE
-    private static double scoreDecryption(String text, String key, String alphabet, double[] langFreq) {
+    public static double scoreDecryption(String text, String key, String alphabet, double[] langFreq) {
         int N = alphabet.length();
         int keyLen = key.length();
         double totalChi = 0;
@@ -114,7 +126,7 @@ public class VigenereCracker {
         return totalChi / keyLen;
     }
     // FREQ ANALYSIS and FIND KEY
-    private static String findKeyByFrequency(String text, int keyLen, String alphabet, double[] langFreq) {
+    public static String findKeyByFrequency(String text, int keyLen, String alphabet, double[] langFreq) {
         int N = alphabet.length();
         StringBuilder key = new StringBuilder();
         for (int i = 0; i < keyLen; i++) {
