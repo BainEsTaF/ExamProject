@@ -52,7 +52,7 @@ public class VigenereCracker {
         KeyResult result = autoDetectKeyLength(filtered, alphabet, freq, maxKeyLen);
         System.out.println("Auto detected key length: " + result.key.length());
         System.out.println("Detected key: " + result.key);
-        String decrypted = decryptVigenere(text, result.key, alphabet);
+        String decrypted = supportLetters(text, result.key, true);
         System.out.println("Decrypted text:");
         System.out.println(decrypted);
     }
@@ -200,5 +200,45 @@ public class VigenereCracker {
             }
         }
         return result.toString();
+    }
+
+    public static String supportLetters(String text, String key, boolean decrypt) {
+        StringBuilder result = new StringBuilder();
+        key = key.toLowerCase();
+        int keyIndex = 0;
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (isEnglishLetter(c)) {
+                boolean isUpper = Character.isUpperCase(c);
+                char base = isUpper ? 'A' : 'a';
+                int shift = key.charAt(keyIndex % key.length()) - 'a';
+                if (decrypt) shift = 26 - shift;
+                char shifted = (char) ((c - base + shift) % 26 + base);
+                result.append(shifted);
+                keyIndex++;
+            } else if (isRussianLetter(c)) {
+                boolean isUpper = Character.isUpperCase(c);
+                char base = isUpper ? 'А' : 'а';
+                int keyChar = key.charAt(keyIndex % key.length());
+                int shift = (Character.toLowerCase(keyChar) - 'а' + 32) % 32;
+                if (decrypt) shift = 32 - shift;
+                char shifted = (char) ((c - base + shift) % 32 + base);
+                result.append(shifted);
+                keyIndex++;
+            } else {
+                result.append(c); // не буква
+            }
+        }
+
+        return result.toString();
+    }
+
+    private static boolean isEnglishLetter(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    private static boolean isRussianLetter(char c) {
+        return (c >= 'А' && c <= 'Я') || (c >= 'а' && c <= 'я');
     }
 }
