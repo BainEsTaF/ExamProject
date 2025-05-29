@@ -1,7 +1,7 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
+import javax.swing.*; // GUI components
+import java.awt.*; // layouts, colors, fonts
+import java.awt.event.*; // Event handling for button clicks
+import java.io.*; // to capture console output from external classes 
 
 public class DecryptionTool extends JFrame {
     private JTextArea inputTextArea, outputTextArea, analysisTextArea;
@@ -12,56 +12,63 @@ public class DecryptionTool extends JFrame {
     private JButton decryptButton, clearButton;
     private JLabel inputLabel, outputLabel, analysisLabel, keyLabel;
 
+
+    // Window Set Up
     public DecryptionTool() {
         setTitle("Decryption Tool");
         setSize(650, 500);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout(15, 15));
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // автоматический остановливает программу, когда закрываем уиндоу
+        setLayout(new BorderLayout(15, 15)); 
         getContentPane().setBackground(new Color(240, 248, 255));
 
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        topPanel.setBackground(new Color(230, 240, 250));
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    // Control Section
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10)); // aligns components to the left, with 10-pixel horizontal and vertical gaps between them
+        topPanel.setBackground(new Color(230, 240, 250)); 
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // a 10-pixel padding around the panel's edges
 
+        
         JLabel langLabel = new JLabel("Select Language:");
         langLabel.setFont(new Font("Arial", Font.BOLD, 12));
         englishRadio = new JRadioButton("English", true);
         russianRadio = new JRadioButton("Russian");
-        ButtonGroup langGroup = new ButtonGroup();
+        ButtonGroup langGroup = new ButtonGroup(); // groups the languages (только одну можно выбрать)
         langGroup.add(englishRadio);
         langGroup.add(russianRadio);
 
+        
         JLabel algoLabel = new JLabel("Algorithm:");
         algoLabel.setFont(new Font("Arial", Font.BOLD, 12));
         String[] algorithms = {"Caesar", "Vigenère"};
-        algorithmComboBox = new JComboBox<>(algorithms);
+        algorithmComboBox = new JComboBox<>(algorithms);   // creates a dropdown
         algorithmComboBox.setFont(new Font("Arial", Font.PLAIN, 12));
-        algorithmComboBox.setBackground(Color.WHITE);
+        algorithmComboBox.setBackground(Color.WHITE); 
 
         bruteforceCheckBox = new JCheckBox("Enable Bruteforce");
         bruteforceCheckBox.setFont(new Font("Arial", Font.PLAIN, 12));
         bruteforceCheckBox.setBackground(new Color(230, 240, 250));
 
-        decryptButton = new JButton("Decrypt");
+        decryptButton = new JButton("Decrypt"); 
         decryptButton.setFont(new Font("Arial", Font.BOLD, 12));
         decryptButton.setBackground(new Color(46, 139, 87));
-        decryptButton.setForeground(Color.WHITE);
+        decryptButton.setForeground(Color.WHITE);  // "Decrypt"
         decryptButton.setFocusPainted(false);
 
         clearButton = new JButton("Clear");
         clearButton.setFont(new Font("Arial", Font.BOLD, 12));
         clearButton.setBackground(new Color(220, 20, 60));
         clearButton.setForeground(Color.WHITE);
-        clearButton.setFocusPainted(false);
+        clearButton.setFocusPainted(false);  //removes the focus border
 
-     
+
+        
         keyLabel = new JLabel("Detected Key:");
         keyLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        keyField = new JTextField(12);
-        keyField.setFont(new Font("Arial", Font.PLAIN, 12));
+        keyField = new JTextField(12);  // 12 characters width
+        keyField.setFont(new Font("Arial", Font.PLAIN, 12)); 
         keyField.setBackground(Color.WHITE);
-        keyField.setEditable(false);
+        keyField.setEditable(false);  // readonly 
 
+        // Organize the contol elements in the top 
         topPanel.add(langLabel);
         topPanel.add(englishRadio);
         topPanel.add(russianRadio);
@@ -73,10 +80,13 @@ public class DecryptionTool extends JFrame {
         topPanel.add(decryptButton);
         topPanel.add(clearButton);
 
-        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+        // Center Panel
+        
+        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 10, 10)); // 2 rows, 1 column, 10 pixel gaps
         centerPanel.setBackground(new Color(245, 245, 245));
-        centerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // padding
 
+        //Provides Editable Area
         inputLabel = new JLabel("Encrypted Text:");
         inputLabel.setFont(new Font("Arial", Font.BOLD, 12));
         inputTextArea = new JTextArea(5, 40);
@@ -92,6 +102,7 @@ public class DecryptionTool extends JFrame {
         outputTextArea.setFont(new Font("Arial", Font.PLAIN, 12));
         outputTextArea.setBackground(Color.WHITE);
 
+        // Organizex input n output in two rows
         centerPanel.add(inputLabel);
         centerPanel.add(new JScrollPane(inputTextArea));
         centerPanel.add(outputLabel);
@@ -100,6 +111,7 @@ public class DecryptionTool extends JFrame {
         JPanel bottomPanel = new JPanel(new BorderLayout(10, 10));
         bottomPanel.setBackground(new Color(245, 245, 245));
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
         analysisLabel = new JLabel("Analysis Results:");
         analysisLabel.setFont(new Font("Arial", Font.BOLD, 12));
         analysisTextArea = new JTextArea(8, 40);
@@ -114,6 +126,7 @@ public class DecryptionTool extends JFrame {
         add(centerPanel, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
 
+        // enables interactivity
         decryptButton.addActionListener(e -> decryptText());
         clearButton.addActionListener(e -> clearFields());
         englishRadio.addActionListener(e -> updateLabels());
@@ -122,8 +135,8 @@ public class DecryptionTool extends JFrame {
     }
 
     private void decryptText() {
-        String input = inputTextArea.getText().trim();
-        String algorithm = (String) algorithmComboBox.getSelectedItem();
+        String input = inputTextArea.getText().trim(); //remove leading and trailing whitespace
+        String algorithm = (String) algorithmComboBox.getSelectedItem(); 
         String language = englishRadio.isSelected() ? "English" : "Russian";
         String langCode = englishRadio.isSelected() ? "en" : "ru";
 
@@ -136,58 +149,132 @@ public class DecryptionTool extends JFrame {
         String result = "";
         String analysisResult = "";
         String detectedKey = "";
-        if (algorithm.equals("Caesar")) {
-            if (bruteforceCheckBox.isSelected()) {
-                java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
-                PrintStream originalOut = System.out;
-                System.setOut(new PrintStream(outContent));
-                CaesarBruteforce.runBruteforce(input, langCode);
-                System.setOut(originalOut);
-                result = outContent.toString().replaceAll("\\r\\n", "\n").trim();
-                analysisResult = "Bruteforce analysis completed for all shifts.";
-                detectedKey = "1";
-            } else {
-                java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
-                System.setOut(new java.io.PrintStream(outContent));
-                CaesarDecrypt.analyzeCaesarDecryption(input, langCode);
-                analysisResult = outContent.toString();
-                System.setOut(new java.io.PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.out)));
-                result = analysisResult;
-                detectedKey = "1";
-            }
-        } else {
-            String vigAlphabet = language.equals("English") ? VigenereCracker.ENG_ALPHABET : VigenereCracker.RUS_ALPHABET;
-            StringBuilder filteredBuilder = new StringBuilder();
-            for (char c : input.toUpperCase().toCharArray()) {
-                if (vigAlphabet.indexOf(c) != -1) {
-                    filteredBuilder.append(c);
-                }
-            }
-            String filteredInput = filteredBuilder.toString();
-            if (filteredInput.length() < 10) {
-                JOptionPane.showMessageDialog(this, "Text too short for Vigenère analysis.",
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+ // Check if the selected algorithm is "Caesar"
+if (algorithm.equals("Caesar")) {
 
-            String key = VigenereCracker.autoDetectKeyLength(filteredInput,
-                    language.equals("English") ? VigenereCracker.ENG_ALPHABET : VigenereCracker.RUS_ALPHABET,
-                    language.equals("English") ? VigenereCracker.ENG_FREQ : VigenereCracker.RUS_FREQ, 20).key;
-            java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
-            System.setOut(new java.io.PrintStream(outContent));
-            VigenereCracker.findKeyByFrequency(filteredInput, key.length(),
-                    language.equals("English") ? VigenereCracker.ENG_ALPHABET : VigenereCracker.RUS_ALPHABET,
-                    language.equals("English") ? VigenereCracker.ENG_FREQ : VigenereCracker.RUS_FREQ);
-            analysisResult = outContent.toString();
-            System.setOut(new java.io.PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.out)));
-            result = VigenereCracker.decryptVigenere(input, key,
-                    language.equals("English") ? VigenereCracker.ENG_ALPHABET : VigenereCracker.RUS_ALPHABET);
-            detectedKey = key;
-        }
-        outputTextArea.setText(result);
-        analysisTextArea.setText(analysisResult);
-        keyField.setText(detectedKey);
+    // If the user selected the "Bruteforce" checkbox
+    if (bruteforceCheckBox.isSelected()) {
+
+        // Create a ByteArrayOutputStream to capture output printed to System.out
+        java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
+
+        // Save the original System.out stream to restore later
+        PrintStream originalOut = System.out;
+
+        // Redirect System.out to outContent to capture printed output
+        System.setOut(new PrintStream(outContent));
+
+        // Run CaesarBruteforce with the input and language code as arguments
+        CaesarBruteforce.main(new String[]{input, langCode});
+
+        // Restore the original System.out stream
+        System.setOut(originalOut);
+
+        // Get captured output as a string, normalize line endings, and trim whitespace
+        result = outContent.toString().replaceAll("\\r\\n", "\n").trim();
+
+        // Set analysis result message
+        analysisResult = "Bruteforce analysis completed for all shifts.";
+
+        // Dummy key value for Caesar since actual key is not detected in bruteforce mode
+        detectedKey = "1";
+
+    } else { // If bruteforce is not selected, use frequency analysis instead
+
+        // Create a ByteArrayOutputStream to capture output
+        java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
+
+        // Redirect System.out to capture analysis output
+        System.setOut(new java.io.PrintStream(outContent));
+
+        // Perform Caesar decryption with frequency analysis
+        CaesarDecrypt.analyzeCaesarDecryption(input, langCode);
+
+        // Retrieve the captured output as a string
+        analysisResult = outContent.toString();
+
+        // Restore the original System.out (this time using FileDescriptor.out)
+        System.setOut(new java.io.PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.out)));
+
+        // Set result to be the same as analysis result in this mode
+        result = analysisResult;
+
+        // Dummy key value for Caesar since it's not explicitly extracted here
+        detectedKey = "1";
     }
+
+} else { // If algorithm is not Caesar, assume it's Vigenère
+
+    // Select alphabet depending on the selected language
+    String vigAlphabet = language.equals("English") ? VigenereCracker.ENG_ALPHABET : VigenereCracker.RUS_ALPHABET;
+
+    // Prepare a builder to store filtered input (only characters from the chosen alphabet)
+    StringBuilder filteredBuilder = new StringBuilder();
+
+    // Convert input to uppercase and filter out characters not in the Vigenère alphabet
+    for (char c : input.toUpperCase().toCharArray()) {
+        if (vigAlphabet.indexOf(c) != -1) {
+            filteredBuilder.append(c);
+        }
+    }
+
+    // Final filtered text to be used for analysis
+    String filteredInput = filteredBuilder.toString();
+
+    // Ensure filtered input is long enough for meaningful Vigenère analysis
+    if (filteredInput.length() < 10) {
+        // Show error message if not enough text
+        JOptionPane.showMessageDialog(this, "Text too short for Vigenère analysis.",
+                "Input Error", JOptionPane.ERROR_MESSAGE);
+        return; // Exit the method
+    }
+
+    // Automatically detect key length and extract key based on frequency analysis
+    String key = VigenereCracker.autoDetectKeyLength(
+            filteredInput,
+            language.equals("English") ? VigenereCracker.ENG_ALPHABET : VigenereCracker.RUS_ALPHABET,
+            language.equals("English") ? VigenereCracker.ENG_FREQ : VigenereCracker.RUS_FREQ,
+            20 // maximum key length to consider
+    ).key;
+
+    // Capture frequency analysis output
+    java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
+    System.setOut(new java.io.PrintStream(outContent));
+
+    // Perform frequency analysis to find the most likely key
+    VigenereCracker.findKeyByFrequency(
+            filteredInput,
+            key.length(),
+            language.equals("English") ? VigenereCracker.ENG_ALPHABET : VigenereCracker.RUS_ALPHABET,
+            language.equals("English") ? VigenereCracker.ENG_FREQ : VigenereCracker.RUS_FREQ
+    );
+
+    // Save captured analysis output
+    analysisResult = outContent.toString();
+
+    // Restore the original System.out
+    System.setOut(new java.io.PrintStream(new java.io.FileOutputStream(java.io.FileDescriptor.out)));
+
+    // Decrypt the input text using the found key
+    result = VigenereCracker.decryptVigenere(
+            input,
+            key,
+            language.equals("English") ? VigenereCracker.ENG_ALPHABET : VigenereCracker.RUS_ALPHABET
+    );
+
+    // Store the detected key
+    detectedKey = key;
+}
+
+// Set the result in the output text area
+outputTextArea.setText(result);
+
+// Show the analysis information (e.g., detected shifts, key frequency, etc.)
+analysisTextArea.setText(analysisResult);
+
+// Display the detected or default key
+keyField.setText(detectedKey);
+
 
     private void clearFields() {
         inputTextArea.setText("");
