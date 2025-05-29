@@ -1,12 +1,7 @@
 import java.util.Scanner;
 
 public class CaesarBruteforce {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Введите зашифрованный текст: ");
-        String cipherText = scanner.nextLine();
-        System.out.print("Выберите язык (en/ru): ");
-        String language = scanner.nextLine().trim().toLowerCase();
+    public static void runBruteforce(String cipherText, String language) {
         String alphabet;
         if (language.equals("ru")) {
             alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
@@ -16,8 +11,10 @@ public class CaesarBruteforce {
             System.out.println("Язык должен быть 'en' или 'ru'.");
             return;
         }
+
         int n = alphabet.length();
         System.out.println("\nРезультаты перебора всех сдвигов:\n");
+
         for (int shift = 1; shift < n; shift++) {
             StringBuilder decrypted = new StringBuilder();
             for (char ch : cipherText.toCharArray()) {
@@ -34,5 +31,13 @@ public class CaesarBruteforce {
             }
             System.out.printf("Сдвиг %2d: %s\n", shift, decrypted);
         }
+    }
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Введите зашифрованный текст: ");
+        String cipherText = scanner.nextLine();
+        System.out.print("Выберите язык (en/ru): ");
+        String language = scanner.nextLine().trim().toLowerCase();
+        runBruteforce(cipherText, language);
     }
 }

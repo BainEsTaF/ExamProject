@@ -52,11 +52,11 @@ public class VigenereCracker {
         KeyResult result = autoDetectKeyLength(filtered, alphabet, freq, maxKeyLen);
         System.out.println("Auto detected key length: " + result.key.length());
         System.out.println("Detected key: " + result.key);
-        String decrypted = supportLetters(text, result.key, true);
+        String decrypted = decryptVigenere(text, result.key, alphabet);
         System.out.println("Decrypted text:");
         System.out.println(decrypted);
     }
-    // SAVE RESULT
+    // SAVE RESULT IN OBJECT
     public static class KeyResult {
         String key;
         double score;
@@ -68,16 +68,20 @@ public class VigenereCracker {
     }
     // AUTO FIND LENGTH FOR CHI-SQUARE
     public static KeyResult autoDetectKeyLength(String text, String alphabet, double[] langFreq, int maxKeyLen) {
+        // Заносим в стринг текст? убрав все лишнее из него
         String filtered = text.toUpperCase().replaceAll("[^" + alphabet + "]", "");
         if (filtered.length() < 10) {
             throw new IllegalArgumentException("Text is too short or does not contain valid characters from the alphabet.");
         }
+        // Создаем массив мап для хранения повторяющихся элементов
         Map<String, List<Integer>> repeats = new HashMap<>();
+        // Находим повторяющиеся элементы по 3 символа
         int minLen = 3;
         for (int i = 0; i < filtered.length() - minLen; i++) {
             String fragment = filtered.substring(i, i + minLen);
             repeats.computeIfAbsent(fragment, k -> new ArrayList<>()).add(i);
         }
+        // Вычесляем длину между повторяющимися элементами
         List<Integer> distances = new ArrayList<>();
         for (List<Integer> positions : repeats.values()) {
             if (positions.size() > 1) {
@@ -86,10 +90,12 @@ public class VigenereCracker {
                 }
             }
         }
+        // Вывод оишбки если нет таких элементов
         if (distances.isEmpty()) {
             System.out.println("No repeating fragments found, defaulting to key length 3.");
             return new KeyResult(findKeyByFrequency(filtered, 3, alphabet, langFreq), -1);
         }
+        // Подсчет каждого сегмента и запись его длины для хранения в мап
         Map<Integer, Integer> factorCount = new HashMap<>();
         for (int distance : distances) {
             for (int factor = 2; factor <= maxKeyLen; factor++) {
@@ -98,6 +104,7 @@ public class VigenereCracker {
                 }
             }
         }
+        // Берем поток данных(Stream) из мап, находим самый вероятный, заносим его, если не находит то заносит 3
         int bestKeyLen = factorCount.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
@@ -111,9 +118,11 @@ public class VigenereCracker {
         int N = alphabet.length();
         int keyLen = key.length();
         double totalChi = 0;
+        // Фор для на нахождения хи-квадрат(это показатель связи между сегментами и паролем)
         for (int i = 0; i < keyLen; i++) {
             int[] count = new int[N];
             int total = 0;
+            // Фор для вычесления позиции
             for (int pos = i; pos < text.length(); pos += keyLen) {
                 char c = text.charAt(pos);
                 int idx = alphabet.indexOf(c);
@@ -125,6 +134,7 @@ public class VigenereCracker {
             if (total == 0) continue;
             int kidx = alphabet.indexOf(key.charAt(i));
             double chi = 0;
+            // Фор для вычесления всех хи-квадратов, формула: (o-e)^2/e
             for (int j = 0; j < N; j++) {
                 int shiftedIdx = (j + kidx) % N;
                 double observed = count[shiftedIdx];
@@ -133,6 +143,7 @@ public class VigenereCracker {
             }
             totalChi += chi;
         }
+        //Вычесление среднего хи
         return totalChi / keyLen;
     }
     // FREQ ANALYSIS and FIND KEY
@@ -142,6 +153,7 @@ public class VigenereCracker {
         for (int i = 0; i < keyLen; i++) {
             int[] count = new int[N];
             int total = 0;
+            // Фор для вычесления позиции
             for (int pos = i; pos < text.length(); pos += keyLen) {
                 int idx = alphabet.indexOf(text.charAt(pos));
                 if (idx != -1) {
@@ -149,6 +161,7 @@ public class VigenereCracker {
                     total++;
                 }
             }
+            // Нахождение корреляции(зависимость между сдвигом и сегментами), для подбора нилучшей
             double bestCorr = -1;
             int bestShift = 0;
             for (int shift = 0; shift < N; shift++) {
@@ -166,6 +179,7 @@ public class VigenereCracker {
             // OUTPUT FREQ ANALYSIS
             System.out.println("Segment " + (i + 1) + " (shift=" + bestShift +
                     ", key letter='" + alphabet.charAt(bestShift) + "'):");
+            // Лист для хранения мапов с символами и их вероятностью
             List<Map.Entry<Character, Double>> freqList = new ArrayList<>();
             for (int j = 0; j < N; j++) {
                 if (count[j] > 0) {
@@ -191,6 +205,7 @@ public class VigenereCracker {
         int N = alphabet.length();
         int keyLen = key.length();
         int ki = 0;
+        //Фор который проводит все символы через ключ по формуле: (ci - ki + N) mod N
         for (char c : cipher.toCharArray()) {
             int idx = alphabet.indexOf(Character.toUpperCase(c));
             if (idx != -1) {
@@ -209,45 +224,5 @@ public class VigenereCracker {
             }
         }
         return result.toString();
-    }
-
-    public static String supportLetters(String text, String key, boolean decrypt) {
-        StringBuilder result = new StringBuilder();
-        key = key.toLowerCase();
-        int keyIndex = 0;
-
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (isEnglishLetter(c)) {
-                boolean isUpper = Character.isUpperCase(c);
-                char base = isUpper ? 'A' : 'a';
-                int shift = key.charAt(keyIndex % key.length()) - 'a';
-                if (decrypt) shift = 26 - shift;
-                char shifted = (char) ((c - base + shift) % 26 + base);
-                result.append(shifted);
-                keyIndex++;
-            } else if (isRussianLetter(c)) {
-                boolean isUpper = Character.isUpperCase(c);
-                char base = isUpper ? 'А' : 'а';
-                int keyChar = key.charAt(keyIndex % key.length());
-                int shift = (Character.toLowerCase(keyChar) - 'а' + 32) % 32;
-                if (decrypt) shift = 32 - shift;
-                char shifted = (char) ((c - base + shift) % 32 + base);
-                result.append(shifted);
-                keyIndex++;
-            } else {
-                result.append(c);
-            }
-        }
-
-        return result.toString();
-    }
-
-    private static boolean isEnglishLetter(char c) {
-        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-    }
-
-    private static boolean isRussianLetter(char c) {
-        return (c >= 'А' && c <= 'Я') || (c >= 'а' && c <= 'я');
     }
 }

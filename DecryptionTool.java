@@ -141,7 +141,7 @@ public class DecryptionTool extends JFrame {
                 java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
                 PrintStream originalOut = System.out;
                 System.setOut(new PrintStream(outContent));
-                CaesarBruteforce.main(new String[]{input, langCode});
+                CaesarBruteforce.runBruteforce(input, langCode);
                 System.setOut(originalOut);
                 result = outContent.toString().replaceAll("\\r\\n", "\n").trim();
                 analysisResult = "Bruteforce analysis completed for all shifts.";
