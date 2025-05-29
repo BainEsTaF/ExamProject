@@ -149,22 +149,19 @@ public class DecryptionTool extends JFrame {
         String result = "";
         String analysisResult = "";
         String detectedKey = "";
- // Check if the selected algorithm is "Caesar"
+
+        
 if (algorithm.equals("Caesar")) {
 
-    // If the user selected the "Bruteforce" checkbox
     if (bruteforceCheckBox.isSelected()) {
 
-        // Create a ByteArrayOutputStream to capture output printed to System.out
+        // a ByteArrayOutputStream to capture output printed to System.out
         java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
-
-        // Save the original System.out stream to restore later
         PrintStream originalOut = System.out;
 
         // Redirect System.out to outContent to capture printed output
         System.setOut(new PrintStream(outContent));
-
-        // Run CaesarBruteforce with the input and language code as arguments
+        
         CaesarBruteforce.main(new String[]{input, langCode});
 
         // Restore the original System.out stream
@@ -172,16 +169,13 @@ if (algorithm.equals("Caesar")) {
 
         // Get captured output as a string, normalize line endings, and trim whitespace
         result = outContent.toString().replaceAll("\\r\\n", "\n").trim();
-
-        // Set analysis result message
         analysisResult = "Bruteforce analysis completed for all shifts.";
 
         // Dummy key value for Caesar since actual key is not detected in bruteforce mode
         detectedKey = "1";
 
-    } else { // If bruteforce is not selected, use frequency analysis instead
+    } else { 
 
-        // Create a ByteArrayOutputStream to capture output
         java.io.ByteArrayOutputStream outContent = new java.io.ByteArrayOutputStream();
 
         // Redirect System.out to capture analysis output
@@ -283,6 +277,7 @@ keyField.setText(detectedKey);
         keyField.setText("");
     }
 
+        
     private void updateLabels() {
         if (englishRadio.isSelected()) {
             inputLabel.setText("Encrypted Text:");
@@ -297,10 +292,17 @@ keyField.setText(detectedKey);
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            DecryptionTool tool = new DecryptionTool();
-            tool.setVisible(true);
-        });
-    }
+   public static void main(String[] args) {
+    // Schedule a job for the event-dispatching thread:
+    // Creating and showing the application's GUI should be done on this special thread to avoid thread-safety issues.
+    SwingUtilities.invokeLater(() -> {
+        
+        // Create a new instance of the DecryptionTool (this initializes the GUI window)
+        DecryptionTool tool = new DecryptionTool();
+
+        // Make the window visible on the screen
+        tool.setVisible(true);
+    });
+}
+
 }
