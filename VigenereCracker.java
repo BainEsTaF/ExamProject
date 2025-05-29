@@ -68,36 +68,49 @@ public class VigenereCracker {
     }
     // AUTO FIND LENGTH FOR CHI-SQUARE
     public static KeyResult autoDetectKeyLength(String text, String alphabet, double[] langFreq, int maxKeyLen) {
-        // FILTERING TEXT
-        StringBuilder filteredBuilder = new StringBuilder();
-        for (char c : text.toUpperCase().toCharArray()) {
-            if (alphabet.indexOf(c) != -1) {
-                filteredBuilder.append(c);
-            }
-        }
-        String filtered = filteredBuilder.toString();
-        // ERROR FOR SHORT TEXT
+        String filtered = text.toUpperCase().replaceAll("[^" + alphabet + "]", "");
         if (filtered.length() < 10) {
             throw new IllegalArgumentException("Text is too short or does not contain valid characters from the alphabet.");
         }
-        double bestScore = Double.MAX_VALUE;
-        String bestKey = "";
-        for (int keyLen = 1; keyLen <= maxKeyLen; keyLen++) {
-            String key = findKeyByFrequency(filtered, keyLen, alphabet, langFreq);
-            double score = scoreDecryption(filtered, key, alphabet, langFreq);
-            if (score < bestScore) {
-                bestScore = score;
-                bestKey = key;
+        Map<String, List<Integer>> repeats = new HashMap<>();
+        int minLen = 3;
+        for (int i = 0; i < filtered.length() - minLen; i++) {
+            String fragment = filtered.substring(i, i + minLen);
+            repeats.computeIfAbsent(fragment, k -> new ArrayList<>()).add(i);
+        }
+        List<Integer> distances = new ArrayList<>();
+        for (List<Integer> positions : repeats.values()) {
+            if (positions.size() > 1) {
+                for (int i = 1; i < positions.size(); i++) {
+                    distances.add(positions.get(i) - positions.get(i - 1));
+                }
             }
         }
-        return new KeyResult(bestKey, bestScore);
+        if (distances.isEmpty()) {
+            System.out.println("No repeating fragments found, defaulting to key length 3.");
+            return new KeyResult(findKeyByFrequency(filtered, 3, alphabet, langFreq), -1);
+        }
+        Map<Integer, Integer> factorCount = new HashMap<>();
+        for (int distance : distances) {
+            for (int factor = 2; factor <= maxKeyLen; factor++) {
+                if (distance % factor == 0) {
+                    factorCount.put(factor, factorCount.getOrDefault(factor, 0) + 1);
+                }
+            }
+        }
+        int bestKeyLen = factorCount.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(3);
+        String key = findKeyByFrequency(filtered, bestKeyLen, alphabet, langFreq);
+        double score = scoreDecryption(filtered, key, alphabet, langFreq);
+        return new KeyResult(key, score);
     }
     // CHI-SQUARE FOR CALCULATE THE AVERAGE SCORE
     public static double scoreDecryption(String text, String key, String alphabet, double[] langFreq) {
         int N = alphabet.length();
         int keyLen = key.length();
         double totalChi = 0;
-
         for (int i = 0; i < keyLen; i++) {
             int[] count = new int[N];
             int total = 0;
@@ -110,16 +123,13 @@ public class VigenereCracker {
                 }
             }
             if (total == 0) continue;
-
             int kidx = alphabet.indexOf(key.charAt(i));
             double chi = 0;
             for (int j = 0; j < N; j++) {
                 int shiftedIdx = (j + kidx) % N;
                 double observed = count[shiftedIdx];
                 double expected = total * langFreq[j];
-                if (expected != 0) {
-                    chi += Math.pow(observed - expected, 2) / expected;
-                }
+                if (expected != 0) chi += Math.pow(observed - expected, 2) / expected;
             }
             totalChi += chi;
         }
@@ -133,8 +143,7 @@ public class VigenereCracker {
             int[] count = new int[N];
             int total = 0;
             for (int pos = i; pos < text.length(); pos += keyLen) {
-                char c = text.charAt(pos);
-                int idx = alphabet.indexOf(c);
+                int idx = alphabet.indexOf(text.charAt(pos));
                 if (idx != -1) {
                     count[idx]++;
                     total++;
@@ -227,7 +236,7 @@ public class VigenereCracker {
                 result.append(shifted);
                 keyIndex++;
             } else {
-                result.append(c); // не буква
+                result.append(c);
             }
         }
 
