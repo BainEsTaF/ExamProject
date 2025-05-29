@@ -25,6 +25,7 @@ public class CaesarDecrypt {
         char mostFrequentExpected = language.equals("ru") ? 'о' : 'e';
         int alphabetLength = alphabet.length();
 
+        // 1. Подсчёт частот букв
         Map<Character, Integer> frequency = new HashMap<>();
         for (char ch : cipherText.toLowerCase().toCharArray()) {
             if (alphabet.indexOf(ch) != -1) {
@@ -37,6 +38,7 @@ public class CaesarDecrypt {
             return;
         }
 
+        // 2. Сортировка частот по убыванию
         List<Map.Entry<Character, Integer>> sortedFreq = new ArrayList<>(frequency.entrySet());
         sortedFreq.sort((a, b) -> b.getValue().compareTo(a.getValue()));
 
@@ -45,12 +47,13 @@ public class CaesarDecrypt {
             System.out.printf("   %c : %d\n", entry.getKey(), entry.getValue());
         }
 
+        // 3. TOP-3 расшифровки по наиболее частым буквам
         System.out.println("\n TOP-3 вероятные расшифровки:");
         int top = Math.min(3, sortedFreq.size());
         for (int i = 0; i < top; i++) {
             char frequentChar = sortedFreq.get(i).getKey();
             int shift = (alphabet.indexOf(frequentChar) - alphabet.indexOf(mostFrequentExpected) + alphabetLength) % alphabetLength;
-
+            // Применение сдвига
             StringBuilder result = new StringBuilder();
             for (char ch : cipherText.toCharArray()) {
                 boolean isUpper = Character.isUpperCase(ch);
